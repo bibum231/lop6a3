@@ -221,22 +221,25 @@
 
 <script src="db_submissions.js"></script>
     <script>
-        let loggedInDisplayName = '';
-        // Biến lưu trữ ánh xạ username -> displayName
+        // Biến này được giữ lại để sử dụng cho mục đích tra cứu các bài nộp cũ
         let userDisplayNameMap = {}; 
 
-        // --- HÀM HỖ TRỢ: LẤY VÀ ÁNH XẠ DANH SÁCH NGƯỜI DÙNG MỚI ---
+        // --- HÀM HỖ TRỢ: LẤY VÀ ÁNH XẠ DANH SÁCH NGƯỜI DÙNG (Dành cho bài nộp CŨ) ---
         function initializeUserMap() {
             const usersJSON = localStorage.getItem('allUsers');
             const allUsersObject = usersJSON ? JSON.parse(usersJSON) : {};
-            userDisplayNameMap = {}; // Reset Map
+            userDisplayNameMap = {}; 
 
             // Chuyển đổi Object thành Map: username -> displayName
             Object.keys(allUsersObject).forEach(username => {
-                userDisplayNameMap[username] = allUsersObject[username].displayName;
+                // Chỉ lấy thông tin học sinh ('hs') nếu cần, nhưng tốt nhất là lấy hết
+                if (allUsersObject[username].role === 'hs') {
+                    userDisplayNameMap[username] = allUsersObject[username].displayName;
+                }
             });
         }
         
+        // --- CHỨC NĂNG CHÍNH: KHỞI TẠO VÀ KIỂM TRA QUYỀN TRUY CẬP ---
         function checkTeacherAccess() {
             const role = localStorage.getItem('role');
             const displayName = localStorage.getItem('displayName'); 
@@ -247,10 +250,10 @@
                 return;
             }
 
-            loggedInDisplayName = displayName || 'Giáo viên'; 
+            const loggedInDisplayName = displayName || 'Giáo viên'; 
             document.getElementById('welcome-user').textContent = `Xin chào, ${loggedInDisplayName}!`;
             
-            // BƯỚC MỚI: Khởi tạo Map người dùng trước khi tải bài nộp
+            // Bước quan trọng: Khởi tạo Map để xử lý bài nộp cũ
             initializeUserMap(); 
             loadAllSubmissions();
         }
@@ -262,7 +265,7 @@
             window.location.href = 'trang_chu.html';
         }
 
-        /* --- HÀM CHẤM ĐIỂM (markSubmission) (Giữ nguyên logic) --- */
+        // --- HÀM CHẤM ĐIỂM (markSubmission) (Đã tối ưu logic tên hiển thị) ---
         function markSubmission(id) {
             let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
             
@@ -273,19 +276,20 @@
                 const currentSubmission = submissions[submissionIndex];
                 const currentStatus = currentSubmission.status;
                 
-                // SỬA: Lấy tên hiển thị từ Map, nếu không có thì dùng username
-                const studentName = userDisplayNameMap[currentSubmission.student] || currentSubmission.student; 
+                // LOGIC CẢI TIẾN: Ưu tiên displayName được lưu trong bài nộp
+                const studentName = currentSubmission.displayName || userDisplayNameMap[currentSubmission.student] || currentSubmission.student; 
                 const title = currentSubmission.title;
                 const currentScore = currentSubmission.score !== undefined && currentSubmission.score !== null ? currentSubmission.score : 'Chưa có';
                 
                 if (currentStatus === 'Đã chấm') {
-                    const action = confirm(`Bài tập "${title}" của ${studentName} đã được chấm (${currentScore}/10). Nhấn OK để HỦY CHẤM, nhấn Cancel để CHẤM LẠI.`);
+                    const action = confirm(`Bài tập "${title}" của ${studentName} đã được chấm (${currentScore}/10).\n\nNhấn OK để HỦY CHẤM, nhấn Cancel để CHẤM LẠI.`);
                     
                     if (action) {
                         currentSubmission.status = 'Chưa chấm';
                         currentSubmission.score = null;
                         localStorage.setItem('submissions', JSON.stringify(submissions));
                         loadAllSubmissions(); 
+                        alert(`Đã hủy chấm bài "${title}" của ${studentName}.`);
                     } else {
                         let score = prompt(`CHẤM LẠI cho bài "${title}" của ${studentName}.\nĐiểm hiện tại: ${currentScore}/10. Nhập điểm mới (0-10):`);
                         if (score === null) return; 
@@ -300,6 +304,7 @@
                         currentSubmission.score = score; 
                         localStorage.setItem('submissions', JSON.stringify(submissions));
                         loadAllSubmissions(); 
+                        alert(`Đã cập nhật điểm ${score}/10 cho bài "${title}" của ${studentName}.`);
                     }
                     return;
 
@@ -318,11 +323,12 @@
                     currentSubmission.score = score; 
                     localStorage.setItem('submissions', JSON.stringify(submissions));
                     loadAllSubmissions(); 
+                    alert(`Đã chấm điểm ${score}/10 cho bài "${title}" của ${studentName}.`);
                 }
             }
         }
         
-        /* --- HÀM XEM BÀI (viewSubmission) (Giữ nguyên) --- */
+        // --- HÀM XEM BÀI (viewSubmission) (Giữ nguyên) ---
         function viewSubmission(link) {
             if (!link || link.trim() === '') {
                 alert("Bài nộp không có liên kết để mở.");
@@ -352,7 +358,7 @@
             }
         }
 
-        /* --- HÀM LỌC VÀ HIỂN THỊ (filterSubmissions) (Đã sửa logic hiển thị Tên HS) --- */
+        /* --- HÀM LỌC VÀ HIỂN THỊ (filterSubmissions) (Đã tối ưu logic hiển thị Tên HS) --- */
         function filterSubmissions() {
             const statusFilter = document.getElementById('status-filter').value;
             const typeFilter = document.getElementById('type-filter').value;
@@ -363,14 +369,15 @@
             
             // Lọc dữ liệu
             const filteredSubmissions = submissions.filter(sub => {
-                // SỬA: Lấy tên hiển thị từ Map, nếu không có thì dùng username
-                const displayName = userDisplayNameMap[sub.student] || sub.student; 
+                // LOGIC CẢI TIẾN: Ưu tiên displayName từ bài nộp, nếu không có thì tra cứu Map (dành cho bài cũ)
+                const studentName = (sub.displayName || userDisplayNameMap[sub.student] || sub.student).toLowerCase(); 
+                
                 const title = sub.title ? sub.title.toLowerCase() : '';
                 const studentUsername = sub.student ? sub.student.toLowerCase() : ''; // username
                 
                 const statusMatch = statusFilter === 'all' || sub.status === statusFilter;
                 const typeMatch = typeFilter === 'all' || sub.type === typeFilter;
-                const searchMatch = displayName.toLowerCase().includes(searchInput) || 
+                const searchMatch = studentName.includes(searchInput) || 
                                     title.includes(searchInput) ||
                                     studentUsername.includes(searchInput);
                 
@@ -379,8 +386,10 @@
 
             // Sắp xếp dữ liệu đã lọc 
             filteredSubmissions.sort((a, b) => {
+                // Ưu tiên "Chưa chấm" lên đầu
                 if (a.status === 'Chưa chấm' && b.status !== 'Chưa chấm') return -1;
                 if (a.status !== 'Chưa chấm' && b.status === 'Chưa chấm') return 1;
+                // Sau đó sắp xếp theo ID giảm dần (bài mới hơn lên trước)
                 return (b.id || 0) - (a.id || 0); 
             });
 
@@ -411,14 +420,15 @@
                 }
                 
                 let linkToView = sub.link || ''; 
-                // SỬA: Sử dụng Map để lấy tên hiển thị
-                const studentNameDisplay = userDisplayNameMap[sub.student] || sub.student; 
-
+                
+                // LOGIC CẢI TIẾN: Lấy tên hiển thị
+                const studentDisplayName = sub.displayName || userDisplayNameMap[sub.student] || 'Lỗi Tên';
+                
                 // TẠO HÀNG VỚI 8 CỘT (TD) ĐỂ KHỚP VỚI 8 CỘT (TH)
                 const row = `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${studentNameDisplay} (${sub.student})</td>
+                        <td style="font-weight: 600;">${studentDisplayName} (<span style="font-style: italic; color: #666;">${sub.student}</span>)</td>
                         <td>${sub.title}</td>
                         <td>${displayType(sub.type)}</td>
                         <td>${sub.date}</td>
@@ -436,8 +446,4 @@
         function loadAllSubmissions() {
             filterSubmissions();
         }
-
-        // Chạy khi load body
-        // checkTeacherAccess(); // Đã được gọi trong body onload
-
     </script>
