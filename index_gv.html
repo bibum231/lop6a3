@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Bài Nộp | Giáo Viên 6A3</title>
+    <style>
+        /* Thiết lập chung */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f0f8ff; 
+            color: #333;
+        }
+        /* --- HEADER (Giữ nguyên đã sửa lỗi) --- */
+        .header {
+            background-color: #388E3C; 
+            color: white;
+            padding: 10px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        .nav-links {
+            display: flex; 
+            align-items: center;
+        }
+        .nav-links a {
+            color: white; 
+            text-decoration: none; 
+            padding: 8px 15px; 
+            border-radius: 4px; 
+            margin-left: 10px;
+            transition: background-color 0.3s;
+        }
+        .nav-links a.active {
+            background-color: #4CAF50; 
+            font-weight: bold;
+        }
+        #user-info-container {
+            display: flex; 
+            align-items: center; 
+            margin-left: 20px;
+        }
+        #welcome-user {
+            color: #FFC107; 
+            font-weight: bold; 
+            margin-right: 20px; 
+            font-size: 1.1em;
+            padding: 0; 
+        }
+        #logout-btn {
+            background-color: #e74c3c; 
+            cursor: pointer; 
+            padding: 8px 15px;
+        }
+        #logout-btn:hover { 
+            background-color: #c0392b; 
+        }
+        /* --- KẾT THÚC HEADER --- */
+
+        /* Main Content */
+        .main-area {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        /* --- KHỐI MỚI: Thanh Công cụ Quản lý và Bộ Lọc --- */
+        .management-tools {
+            background-color: #e8f5e9; /* Nền xanh nhạt hơn */
+            border: 1px solid #c8e6c9;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .filter-group label {
+            font-weight: bold;
+            color: #388E3C;
+        }
+        .filter-group select, .filter-group input[type="search"] {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            min-width: 150px;
+        }
+        #search-input {
+            min-width: 250px;
+        }
+        .summary-note {
+            font-style: italic;
+            color: #555;
+            font-size: 0.95em;
+        }
+        /* End Khối Mới */
+
+        /* Lịch sử Bài Nộp */
+        .history-section h2 {
+            font-size: 2.2em; color: #388E3C; border-bottom: 3px solid #FFC107; padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .history-table {
+            width: 100%; border-collapse: collapse; background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .history-table th, .history-table td {
+            border: 1px solid #ddd; padding: 12px; text-align: left;
+            vertical-align: middle;
+        }
+        .history-table th {
+            background-color: #388E3C; color: white; font-weight: bold;
+        }
+        .history-table tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        /* Trạng thái */
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.9em; font-weight: bold; }
+        .status-new { background-color: #FFC107; color: #333; }
+        .status-checked { background-color: #4CAF50; color: white; }
+
+        /* Nút Xem và Chấm */
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 5px;
+            transition: opacity 0.2s;
+        }
+        .btn-view { background-color: #3498db; color: white; }
+        .btn-check { background-color: #2ecc71; color: white; }
+        .btn-revert { background-color: #f39c12; color: white; }
+
+        /* Footer */
+        .footer {
+            padding: 20px; text-align: center; background-color: #333;
+            color: white; font-size: 0.9em; margin-top: 40px;
+        }
+    </style>
+</head>
+<body onload="checkTeacherAccess()">
+    <div class="header">
+        <div class="logo">
+            <span>LỚP 6A3 (QUẢN LÝ)</span>
+        </div>
+        <div class="nav-links">
+            <a href="trang_chu_gv.html">Trang Chủ</a> 
+            <a href="#" class="active">Chấm Bài</a> 
+            
+            <div id="user-info-container">
+                <span id="welcome-user"></span>
+                <a href="#" onclick="logout()" id="logout-btn">Đăng Xuất</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-area">
+        <div class="management-tools">
+            <div class="filter-group">
+                <label for="status-filter">Trạng thái:</label>
+                <select id="status-filter" onchange="filterSubmissions()">
+                    <option value="all">Tất cả</option>
+                    <option value="Chưa chấm">Chưa chấm</option>
+                    <option value="Đã chấm">Đã chấm</option>
+                </select>
+
+                <label for="type-filter">Loại bài:</label>
+                <select id="type-filter" onchange="filterSubmissions()">
+                    <option value="all">Tất cả</option>
+                    <option value="video">Video/Thuyết trình</option>
+                    <option value="file">Tài liệu/File</option>
+                    <option value="link">Liên kết</option>
+                </select>
+
+                <input type="search" id="search-input" placeholder="Tìm kiếm theo tên HS hoặc Tên Bài..." onkeyup="filterSubmissions()">
+            </div>
+            <div class="summary-note">
+                <p>Tổng cộng: <span id="total-submissions-display" style="font-weight: bold;">0</span> bài nộp.</p>
+            </div>
+        </div>
+        
+        <div class="history-section">
+            <h2>📝 Danh Sách Bài Nộp Của Học Sinh</h2>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Học Sinh</th>
+                        <th>Tên Bài Tập</th>
+                        <th>Loại</th>
+                        <th>Thời gian Nộp</th>
+                        <th>Trạng thái</th>
+                        <th>Điểm số</th>
+                        <th>Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="all-submissions-list">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        © 2025 Lớp 6A3 Chuyên Anh | Hệ thống Quản Lý.
+    </div>
+
+    <script src="db_submissions.js"></script>
+    <script>
+        let loggedInDisplayName = ''; 
+
+        function checkTeacherAccess() {
+            const role = localStorage.getItem('role');
+            const displayName = localStorage.getItem('displayName'); 
+
+            if (role !== 'gv') {
+                alert('Bạn không có quyền truy cập trang này. Vui lòng đăng nhập bằng tài khoản Giáo viên.');
+                window.location.href = 'dangnhap.html';
+                return;
+            }
+
+            loggedInDisplayName = displayName || 'Giáo viên'; 
+            document.getElementById('welcome-user').textContent = `Xin chào, ${loggedInDisplayName}!`;
+            
+            loadAllSubmissions();
+        }
+
+        function logout() {
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            localStorage.removeItem('displayName'); 
+            window.location.href = 'trang_chu.html';
+        }
+
+        /* --- HÀM CHẤM ĐIỂM (markSubmission) --- */
+        function markSubmission(id) {
+            let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+            
+            const submissionId = parseInt(id); 
+
+            const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+
+            if (submissionIndex !== -1) {
+                const currentSubmission = submissions[submissionIndex];
+                const currentStatus = currentSubmission.status;
+                const studentName = currentSubmission.displayName || currentSubmission.student;
+                const title = currentSubmission.title;
+                const currentScore = currentSubmission.score !== undefined && currentSubmission.score !== null ? currentSubmission.score : 'Chưa có';
+                
+                if (currentStatus === 'Đã chấm') {
+                    const action = confirm(`Bài tập "${title}" của ${studentName} đã được chấm (${currentScore}/10). Nhấn OK để HỦY CHẤM, nhấn Cancel để CHẤM LẠI.`);
+                    
+                    if (action) {
+                        currentSubmission.status = 'Chưa chấm';
+                        currentSubmission.score = null;
+                        localStorage.setItem('submissions', JSON.stringify(submissions));
+                        loadAllSubmissions(); 
+                    } else {
+                        let score = prompt(`CHẤM LẠI cho bài "${title}" của ${studentName}.\nĐiểm hiện tại: ${currentScore}/10. Nhập điểm mới (0-10):`);
+                        if (score === null) return; 
+                        score = parseFloat(score);
+
+                        if (isNaN(score) || score < 0 || score > 10) {
+                            alert("Điểm không hợp lệ. Vui lòng nhập điểm từ 0 đến 10.");
+                            return;
+                        }
+
+                        currentSubmission.status = 'Đã chấm';
+                        currentSubmission.score = score; 
+                        localStorage.setItem('submissions', JSON.stringify(submissions));
+                        loadAllSubmissions(); 
+                    }
+                    return;
+
+                } else {
+                    let score = prompt(`Chấm điểm cho bài "${title}" của ${studentName}.\nNhập điểm (0-10):`);
+                    if (score === null) return; 
+                    
+                    score = parseFloat(score);
+
+                    if (isNaN(score) || score < 0 || score > 10) {
+                        alert("Điểm không hợp lệ. Vui lòng nhập điểm từ 0 đến 10.");
+                        return;
+                    }
+
+                    currentSubmission.status = 'Đã chấm';
+                    currentSubmission.score = score; 
+                    localStorage.setItem('submissions', JSON.stringify(submissions));
+                    loadAllSubmissions(); 
+                }
+            }
+        }
+        
+        /* --- HÀM XEM BÀI (viewSubmission) --- */
+        function viewSubmission(link) {
+            if (!link || link.trim() === '') {
+                alert("Bài nộp không có liên kết để mở.");
+                return;
+            }
+            
+            let finalLink = link.trim(); 
+
+            if (finalLink.startsWith("file:")) {
+                alert("Bài nộp này là dạng File (Ghi chú). Vui lòng yêu cầu học sinh gửi file gốc qua kênh khác.");
+                return;
+            }
+            
+            // Xử lý link không có http/https
+            if (!(finalLink.startsWith("http://") || finalLink.startsWith("https://"))) {
+                // Thêm https://
+                finalLink = `https://${finalLink}`;
+            }
+
+            // Mở tab mới
+            window.open(finalLink, '_blank');
+        }
+
+        function displayType(type) {
+            switch(type) {
+                case 'video': return 'Video/TT';
+                case 'file': return 'Tài liệu/File';
+                case 'link': return 'Liên kết';
+                default: return 'Khác';
+            }
+        }
+
+        /* --- HÀM LỌC VÀ HIỂN THỊ (filterSubmissions) ĐÃ SỬA CẤU TRÚC BẢNG --- */
+        function filterSubmissions() {
+            const statusFilter = document.getElementById('status-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            const searchInput = document.getElementById('search-input').value.toLowerCase();
+            const submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+            const tableBody = document.getElementById('all-submissions-list');
+            tableBody.innerHTML = ''; 
+            
+            // Lọc dữ liệu
+            const filteredSubmissions = submissions.filter(sub => {
+                const displayName = sub.displayName ? sub.displayName.toLowerCase() : '';
+                const title = sub.title ? sub.title.toLowerCase() : '';
+                const student = sub.student ? sub.student.toLowerCase() : '';
+                
+                const statusMatch = statusFilter === 'all' || sub.status === statusFilter;
+                const typeMatch = typeFilter === 'all' || sub.type === typeFilter;
+                const searchMatch = displayName.includes(searchInput) || 
+                                    title.includes(searchInput) ||
+                                    student.includes(searchInput);
+                
+                return statusMatch && typeMatch && searchMatch;
+            });
+
+            // Sắp xếp dữ liệu đã lọc 
+            filteredSubmissions.sort((a, b) => {
+                if (a.status === 'Chưa chấm' && b.status !== 'Chưa chấm') return -1;
+                if (a.status !== 'Chưa chấm' && b.status === 'Chưa chấm') return 1;
+                return (b.id || 0) - (a.id || 0); 
+            });
+
+            document.getElementById('total-submissions-display').textContent = filteredSubmissions.length;
+
+
+            if (filteredSubmissions.length === 0) {
+                 // Đảm bảo colspan là 8
+                 tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Không tìm thấy bài nộp nào phù hợp với điều kiện lọc.</td></tr>'; 
+                 return;
+            }
+
+            // Hiển thị dữ liệu đã lọc
+            filteredSubmissions.forEach((sub, index) => {
+                const badgeClass = sub.status === 'Chưa chấm' ? 'status-new' : 'status-checked';
+                
+                let actionButtonText;
+                let actionButtonClass;
+                let scoreText;
+
+                if (sub.status === 'Chưa chấm') {
+                    actionButtonText = 'Chấm Bài';
+                    actionButtonClass = 'btn-check';
+                    scoreText = '<span style="color: #999;">--</span>'; 
+                } else {
+                    actionButtonText = 'Chấm Lại/Hủy';
+                    actionButtonClass = 'btn-revert';
+                    const score = sub.score !== undefined && sub.score !== null ? parseFloat(sub.score).toFixed(1) : '<span style="color: red;">Lỗi</span>';
+                    scoreText = `<span style="font-weight: bold; color: #E67E22;">${score}</span>/10`; 
+                }
+                
+                let linkToView = sub.link || ''; 
+                const studentNameDisplay = sub.displayName || sub.student;
+
+                // TẠO HÀNG VỚI 8 CỘT (TD) ĐỂ KHỚP VỚI 8 CỘT (TH)
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${studentNameDisplay} (${sub.student})</td>
+                        <td>${sub.title}</td>
+                        <td>${displayType(sub.type)}</td>
+                        <td>${sub.date}</td>
+                        <td><span class="status-badge ${badgeClass}">${sub.status}</span></td>
+                        <td>${scoreText}</td> <td>
+                            <button class="action-btn btn-view" onclick="viewSubmission('${linkToView}')">Xem</button>
+                            <button class="action-btn ${actionButtonClass}" onclick="markSubmission('${sub.id}')">${actionButtonText}</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+        
+        function loadAllSubmissions() {
+            filterSubmissions();
+        }
+
+    </script>
