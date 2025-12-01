@@ -240,16 +240,17 @@
         }
         
         // --- CHỨC NĂNG CHÍNH: KHỞI TẠO VÀ KIỂM TRA QUYỀN TRUY CẬP ---
-        function checkTeacherAccess() {
-            const role = localStorage.getItem('role');
-            const displayName = localStorage.getItem('displayName'); 
-
-            if (role !== 'gv') {
-                alert('Bạn không có quyền truy cập trang này. Vui lòng đăng nhập bằng tài khoản Giáo viên.');
-                window.location.href = 'dangnhap.html';
-                return;
-            }
-
+       function checkTeacherAccess() {
+    const role = localStorage.getItem('role'); // Đọc vai trò
+    
+    // Nếu không phải là giáo viên, chuyển hướng
+    if (role !== 'gv') {
+        alert('Bạn không có quyền truy cập trang này. Vui lòng đăng nhập bằng tài khoản Giáo viên.');
+        window.location.href = 'dangnhap.html';
+        return;
+    }
+    // ... nếu thành công, hiển thị tên (displayName)
+}
             const loggedInDisplayName = displayName || 'Giáo viên'; 
             document.getElementById('welcome-user').textContent = `Xin chào, ${loggedInDisplayName}!`;
             
@@ -447,3 +448,4 @@
             filterSubmissions();
         }
     </script>
+
