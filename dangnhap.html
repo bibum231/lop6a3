@@ -298,80 +298,90 @@
     
 <script src="db_submissions.js"></script>
     <script>
-        // --- HÀM PHÂN LUỒNG THEO VAI TRÒ (gv/hs) ---
-        function redirectToRolePage(role) {
-            // NOTE: Bạn cần kiểm tra lại tên file chính xác cho trang GV và trang HS
-            if (role === 'gv') {
-                window.location.href = 'index_gv.html'; // Tên trang GV thường dùng là index_gv.html
-            } else if (role === 'hs') {
-                window.location.href = 'index_hs.html'; // Tên trang HS thường dùng là index_hs.html
-            } else {
-                window.location.href = 'trang_chu.html';
-            }
-        }
+        // DÁN TOÀN BỘ CODE NÀY VÀO KHỐI <script> TRONG dangnhap.html
 
-        // KIỂM TRA TRUY CẬP KHI TẢI TRANG (Giữ nguyên)
-        function checkAccess() {
-            const role = localStorage.getItem('role');
-            if (role) {
-                // Nếu đã đăng nhập, chuyển hướng theo vai trò
-                redirectToRolePage(role); 
-            }
-        }
-        
-        // --- LOGIC ĐĂNG NHẬP (ĐÃ SỬA: DÙNG KEY 'allUsers' VÀ OBJECT) ---
-        document.getElementById('login-form').addEventListener('submit', function(event) {
-            event.preventDefault();
+// =========================================================================
+// ✅ HÀM KHỞI TẠO TỐI THIỂU (CHỈ TÀI KHOẢN GV)
+// =========================================================================
+function initializeUsers() {
+    const usersJSON = localStorage.getItem('allUsers');
+    
+    // Nếu chưa có dữ liệu HOẶC dữ liệu không hợp lệ, KHỞI TẠO LẠI
+    if (!usersJSON || Object.keys(JSON.parse(usersJSON)).length === 0) {
+        const defaultUsers = {
+            'ndb_chaowner': { username: 'ndb_chaowner', password: 'matkhauquantrong', role: 'gv', displayName: 'Ngô Đăng Bảo Châu' },
+            // Bỏ qua 40 HS, chúng sẽ tự đăng ký
+        };
+        // LƯU DỮ LIỆU CHỈ CÓ GV VÀO LOCALSTORAGE LẦN ĐẦU TIÊN
+        localStorage.setItem('allUsers', JSON.stringify(defaultUsers));
+        console.log('Đã khởi tạo tài khoản Giáo viên mặc định.');
+    }
+}
 
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+// GỌI HÀM KHỞI TẠO NGAY KHI TRANG TẢI
+initializeUsers(); 
 
-            // BƯỚC SỬA LỖI 1: Lấy danh sách người dùng từ key 'allUsers' (dạng Object)
-            const usersJSON = localStorage.getItem('allUsers');
-            let allUsers = {};
-            if (usersJSON) {
-                allUsers = JSON.parse(usersJSON);
-            }
-            
-            // BƯỚC SỬA LỖI 2: Tìm kiếm người dùng trong Object (dùng username làm key)
-            const foundUser = allUsers[username];
-            
-            if (!foundUser) {
-                alert("Tên Người Dùng không tồn tại.");
-                return;
-            }
+// --- CÁC HÀM KHÁC (GIỮ NGUYÊN) ---
 
-            if (foundUser.password !== password) {
-                alert("Mật khẩu không chính xác.");
-                return;
-            }
-            
-            const userRole = foundUser.role;
+function redirectToRolePage(role) {
+    if (role === 'gv') {
+        window.location.href = 'index_gv.html'; 
+    } else if (role === 'hs') {
+        window.location.href = 'index_hs.html'; 
+    } else {
+        window.location.href = 'trang_chu.html';
+    }
+}
 
-            // --- Đăng nhập thành công ---
-            localStorage.setItem('username', username); // Lưu username (key của Object)
-            // Lấy displayName từ object foundUser
-            localStorage.setItem('displayName', foundUser.displayName); 
-            localStorage.setItem('role', userRole);
+function checkAccess() {
+    const role = localStorage.getItem('role');
+    if (role) {
+        redirectToRolePage(role); 
+    }
+}
 
-            alert(`Đăng nhập thành công! Chào mừng ${foundUser.displayName} (${userRole.toUpperCase()}).`);
+document.getElementById('login-form').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-            // CHUYỂN HƯỚNG BẰNG HÀM PHÂN LUỒNG
-            redirectToRolePage(userRole);
-            
-        });
-        
-        // Chức năng ẩn/hiện mật khẩu (giữ nguyên)
-        const passwordInput = document.getElementById('password');
-        const toggleIcon = document.querySelector('.password-icon');
-        if (toggleIcon) {
-            toggleIcon.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                this.classList.toggle('fa-eye-slash');
-                this.classList.toggle('fa-eye');
-            });
-        }
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    // Lấy danh sách người dùng (đã được cập nhật từ Đăng ký)
+    const usersJSON = localStorage.getItem('allUsers');
+    let allUsers = {};
+    if (usersJSON) {
+        allUsers = JSON.parse(usersJSON);
+    }
+    
+    const foundUser = allUsers[username];
+    
+    if (!foundUser || foundUser.password !== password) {
+        alert("Tên Người Dùng hoặc Mật khẩu không chính xác.");
+        return;
+    }
+    
+    const userRole = foundUser.role;
+
+    localStorage.setItem('username', username);
+    localStorage.setItem('displayName', foundUser.displayName); 
+    localStorage.setItem('role', userRole);
+
+    alert(`Đăng nhập thành công! Chào mừng ${foundUser.displayName}.`);
+
+    redirectToRolePage(userRole);
+});
+    
+const passwordInput = document.getElementById('password');
+const toggleIcon = document.querySelector('.password-icon');
+if (toggleIcon) {
+    toggleIcon.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.classList.toggle('fa-eye-slash');
+        this.classList.toggle('fa-eye');
+    });
+}
     </script>
 </body>
 </html>
+
