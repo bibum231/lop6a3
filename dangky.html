@@ -326,64 +326,47 @@
         });
 
         // Hàm xử lý đăng ký chính
-        document.getElementById('signup-form').addEventListener('submit', function(event) {
-            event.preventDefault();
+       // Thay thế khối JavaScript hiện tại trong file dangky.html của bạn
 
-            const displayName = document.getElementById('display-name').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            const role = document.getElementById('role').value; // Giữ lại trường role
+document.getElementById('register-form').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-            // --- 1. KIỂM TRA DỮ LIỆU ---
-            if (!displayName || !username || !password || !confirmPassword || !role) {
-                alert('Vui lòng điền đầy đủ tất cả các trường.');
-                return;
-            }
-            if (password !== confirmPassword) {
-                alert('Mật khẩu và xác nhận mật khẩu không khớp.');
-                return;
-            }
-            if (password.length < 6) {
-                alert('Mật khẩu phải có ít nhất 6 ký tự.');
-                return;
-            }
-            const usernameRegex = /^[a-zA-Z0-9_]+$/;
-            if (!usernameRegex.test(username)) {
-                alert('Tên đăng nhập chỉ có thể chứa chữ cái (không dấu), số và dấu gạch dưới.');
-                return;
-            }
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const displayName = document.getElementById('display-name').value.trim(); // Tên hiển thị
 
-            // --- 2. LẤY VÀ KIỂM TRA DANH SÁCH (SỬ DỤNG KEY CHUNG 'allUsers') ---
-            const usersJSON = localStorage.getItem('allUsers');
-            let allUsers = {};
-            if (usersJSON) {
-                allUsers = JSON.parse(usersJSON);
-            }
-            
-            // Kiểm tra tên đăng nhập đã tồn tại chưa (trong Object)
-            if (allUsers[username]) {
-                alert('Tên đăng nhập này đã tồn tại. Vui lòng chọn tên khác.');
-                return;
-            }
+    // 1. Lấy danh sách người dùng hiện tại
+    const usersJSON = localStorage.getItem('allUsers');
+    let allUsers = {};
+    if (usersJSON) {
+        allUsers = JSON.parse(usersJSON);
+    }
 
-            // --- 3. LƯU TÀI KHOẢN MỚI (DƯỚI DẠNG OBJECT) ---
-            const newUser = {
-                displayName: displayName,
-                password: password, 
-                role: role // Lưu vai trò đã chọn
-            };
+    // 2. Kiểm tra tên đăng nhập đã tồn tại chưa
+    if (allUsers[username]) {
+        alert('Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.');
+        return;
+    }
 
-            // Thêm người dùng mới vào Object
-            allUsers[username] = newUser;
-            
-            // LƯU LẠI VÀO LOCAL STORAGE DƯỚI KEY 'allUsers' (dạng OBJECT)
-            localStorage.setItem('allUsers', JSON.stringify(allUsers)); 
+    // 3. THÊM người dùng mới
+    const newUser = {
+        username: username,
+        password: password,
+        role: 'hs', // Mặc định là học sinh
+        displayName: displayName
+    };
 
-            // --- 4. CHUYỂN HƯỚNG ---
-            alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
-            window.location.href = 'dangnhap.html'; 
-        });
+    allUsers[username] = newUser;
+
+    // 4. LƯU danh sách người dùng MỚI (có người dùng vừa đăng ký) trở lại localStorage
+    localStorage.setItem('allUsers', JSON.stringify(allUsers));
+    
+    alert(`Đăng ký thành công! Chào mừng ${displayName}. Bạn có thể đăng nhập ngay bây giờ.`);
+    
+    // Chuyển hướng về trang đăng nhập
+    window.location.href = 'dangnhap.html'; 
+});
     </script>
 </body>
 </html>
+
