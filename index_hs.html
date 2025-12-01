@@ -215,16 +215,18 @@
     let loggedInUsername = ''; 
     let loggedInDisplayName = ''; 
 
-    function checkAccess() {
-        const username = localStorage.getItem('username');
-        const role = localStorage.getItem('role');
-        const displayName = localStorage.getItem('displayName'); 
-
-        if (role !== 'hs' || !username) {
-            alert('Bạn không có quyền truy cập trang này. Vui lòng đăng nhập bằng tài khoản Học sinh.');
-            window.location.href = 'dangnhap.html';
-            return;
-        }
+   function checkAccess() {
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('role'); // Đọc vai trò
+    
+    // Nếu không có username HOẶC không phải là học sinh, chuyển hướng
+    if (!username || role !== 'hs') { 
+        alert('Bạn cần đăng nhập với tài khoản học sinh để truy cập trang này.');
+        window.location.href = 'dangnhap.html';
+        return;
+    }
+    // ... nếu thành công, hiển thị tên (displayName)
+}
 
         loggedInUsername = username;
         // Đảm bảo có displayName. Nếu không có (lỗi), dùng username.
@@ -455,3 +457,4 @@
     </script>
 </body>
 </html>
+
