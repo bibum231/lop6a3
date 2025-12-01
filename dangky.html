@@ -327,7 +327,47 @@
                 alert('Vui lòng điền đầy đủ tất cả các trường.');
                 return;
             }
+<script>
+    // Hàm này được gọi khi người dùng nhấn nút Đăng ký
+    function handleRegister(event) {
+        event.preventDefault();
 
+        const username = document.getElementById('register-username').value.trim();
+        const password = document.getElementById('register-password').value;
+        const displayName = document.getElementById('register-displayname').value.trim() || username;
+
+        // 1. Lấy danh sách tài khoản hiện tại (từ Local Storage của máy đang đăng ký)
+        const usersJSON = localStorage.getItem('allUsers');
+        let allUsers = {};
+        if (usersJSON) {
+            allUsers = JSON.parse(usersJSON);
+        }
+
+        // 2. Kiểm tra tên đăng nhập đã tồn tại chưa
+        if (allUsers[username]) {
+            alert('Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.');
+            return;
+        }
+
+        // 3. Tạo tài khoản mới (vai trò luôn là 'hs')
+        const newUser = {
+            password: password,
+            role: 'hs', 
+            displayName: displayName
+        };
+
+        // 4. Thêm tài khoản mới và LƯU LẠI DANH SÁCH MỚI
+        allUsers[username] = newUser;
+        localStorage.setItem('allUsers', JSON.stringify(allUsers)); // BƯỚC QUAN TRỌNG NHẤT
+        
+        alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
+        window.location.href = 'dangnhap.html'; 
+    }
+
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
             // Kiểm tra mật khẩu có khớp không
             if (password !== confirmPassword) {
                 alert('Mật khẩu và xác nhận mật khẩu không khớp.');
@@ -389,4 +429,5 @@
         });
     </script>
 </body>
+
 </html>
