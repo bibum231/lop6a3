@@ -297,113 +297,81 @@
     </div>
     
 <script src="db_submissions.js"></script>
-    <script>
-        // --- HÀM PHÂN LUỒNG THEO VAI TRÒ (gv/hs) ---
-        function redirectToRolePage(role) {
-            if (role === 'gv') {
-                window.location.href = 'trang_chu_gv.html'; // Giáo viên -> Trang quản lý
-            } else if (role === 'hs') {
-                window.location.href = 'trang_chu.html'; // Học sinh -> Trang nộp bài
-            } else {
-                window.location.href = 'trang_chu.html'; // Vai trò không xác định -> Trang mặc định
-            }
-        }
-
-        // KIỂM TRA TRUY CẬP KHI TẢI TRANG (Đã sửa để dùng hàm phân luồng)
-        function checkAccess() {
-            const role = localStorage.getItem('role');
-            if (role) {
-                // Nếu đã đăng nhập, chuyển hướng theo vai trò
-                redirectToRolePage(role); 
-            }
-        }
-    // Hàm này được gọi khi người dùng nhấn nút Đăng nhập
-    function handleLogin(event) {
-        event.preventDefault();
-        
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-
-        // 1. Lấy danh sách tài khoản từ Local Storage (cũng dùng key 'allUsers')
-        const usersJSON = localStorage.getItem('allUsers'); 
-        let allUsers = {};
-
-        if (usersJSON) {
-            allUsers = JSON.parse(usersJSON);
-        } 
-        
-        // 2. Kiểm tra tài khoản
-        if (allUsers[username] && allUsers[username].password === password) {
-            // Đăng nhập thành công
-            localStorage.setItem('username', username);
-            localStorage.setItem('role', allUsers[username].role);
-            localStorage.setItem('displayName', allUsers[username].displayName);
-
-            if (allUsers[username].role === 'gv') {
-                window.location.href = 'index_gv.html';
+    <script>
+        // --- HÀM PHÂN LUỒNG THEO VAI TRÒ (gv/hs) ---
+        function redirectToRolePage(role) {
+            // NOTE: Bạn cần kiểm tra lại tên file chính xác cho trang GV và trang HS
+            if (role === 'gv') {
+                window.location.href = 'index_gv.html'; // Tên trang GV thường dùng là index_gv.html
+            } else if (role === 'hs') {
+                window.location.href = 'index_hs.html'; // Tên trang HS thường dùng là index_hs.html
             } else {
-                window.location.href = 'index_hs.html';
+                window.location.href = 'trang_chu.html';
             }
-        } else {
-            // Lỗi: Tài khoản không tồn tại TRONG TRÌNH DUYỆT NÀY hoặc Mật khẩu sai.
-            alert("Tên Người Dùng không tồn tại hoặc Mật khẩu không đúng.");
         }
-    }
 
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-    }
-</script>
-        // Logic Đăng nhập
-        document.getElementById('login-form').addEventListener('submit', function(event) {
-            event.preventDefault();
+        // KIỂM TRA TRUY CẬP KHI TẢI TRANG (Giữ nguyên)
+        function checkAccess() {
+            const role = localStorage.getItem('role');
+            if (role) {
+                // Nếu đã đăng nhập, chuyển hướng theo vai trò
+                redirectToRolePage(role); 
+            }
+        }
+        
+        // --- LOGIC ĐĂNG NHẬP (ĐÃ SỬA: DÙNG KEY 'allUsers' VÀ OBJECT) ---
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
 
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            const foundUser = users.find(user => 
-                user.username.toLowerCase() === username.toLowerCase()
-            );
+            // BƯỚC SỬA LỖI 1: Lấy danh sách người dùng từ key 'allUsers' (dạng Object)
+            const usersJSON = localStorage.getItem('allUsers');
+            let allUsers = {};
+            if (usersJSON) {
+                allUsers = JSON.parse(usersJSON);
+            }
+            
+            // BƯỚC SỬA LỖI 2: Tìm kiếm người dùng trong Object (dùng username làm key)
+            const foundUser = allUsers[username];
+            
+            if (!foundUser) {
+                alert("Tên Người Dùng không tồn tại.");
+                return;
+            }
 
-            if (!foundUser) {
-                alert("Tên Người Dùng không tồn tại.");
-                return;
-            }
+            if (foundUser.password !== password) {
+                alert("Mật khẩu không chính xác.");
+                return;
+            }
+            
+            const userRole = foundUser.role;
 
-            if (foundUser.password !== password) {
-                alert("Mật khẩu không chính xác.");
-                return;
-            }
-            
-            const userRole = foundUser.role;
+            // --- Đăng nhập thành công ---
+            localStorage.setItem('username', username); // Lưu username (key của Object)
+            // Lấy displayName từ object foundUser
+            localStorage.setItem('displayName', foundUser.displayName); 
+            localStorage.setItem('role', userRole);
 
-            // --- Đăng nhập thành công ---
-            localStorage.setItem('username', foundUser.username);
-            localStorage.setItem('displayName', foundUser.displayName); 
-            localStorage.setItem('role', userRole);
+            alert(`Đăng nhập thành công! Chào mừng ${foundUser.displayName} (${userRole.toUpperCase()}).`);
 
-            alert(`Đăng nhập thành công! Chào mừng ${foundUser.displayName} (${userRole.toUpperCase()}).`);
-
-            // *** CHUYỂN HƯỚNG BẰNG HÀM PHÂN LUỒNG MỚI ***
-            redirectToRolePage(userRole);
-            
-        });
-        
-        // Chức năng ẩn/hiện mật khẩu (giữ nguyên)
-        const passwordInput = document.getElementById('password');
-        const toggleIcon = document.querySelector('.password-icon');
-        if (toggleIcon) {
-            toggleIcon.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                this.classList.toggle('fa-eye-slash');
-                this.classList.toggle('fa-eye');
-            });
-        }
-    </script>
+            // CHUYỂN HƯỚNG BẰNG HÀM PHÂN LUỒNG
+            redirectToRolePage(userRole);
+            
+        });
+        
+        // Chức năng ẩn/hiện mật khẩu (giữ nguyên)
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.querySelector('.password-icon');
+        if (toggleIcon) {
+            toggleIcon.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye-slash');
+                this.classList.toggle('fa-eye');
+            });
+        }
+    </script>
 </body>
 </html>
-
