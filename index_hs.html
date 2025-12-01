@@ -207,7 +207,7 @@
         </div>
     </div>
 
-    <div class="footer">
+   <div class="footer">
         © 2025 Lớp 6A3 Chuyên Anh | Hệ thống Nộp Bài.
     </div>
 
@@ -227,6 +227,7 @@
         }
 
         loggedInUsername = username;
+        // Đảm bảo có displayName. Nếu không có (lỗi), dùng username.
         loggedInDisplayName = displayName || username; 
 
         document.getElementById('current-display-name').textContent = loggedInDisplayName;
@@ -251,7 +252,8 @@
         
         let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
         
-        const updatedSubmissions = submissions.filter(sub => sub.id != id);
+        // Sử dụng toán tử === hoặc != để so sánh chính xác id (int)
+        const updatedSubmissions = submissions.filter(sub => sub.id !== parseInt(id));
         
         localStorage.setItem('submissions', JSON.stringify(updatedSubmissions));
         
@@ -272,7 +274,7 @@
         }
     }
 
-    // --- HÀM HIỂN THỊ DỮ LIỆU ĐÃ SỬA CỘT ĐIỂM SỐ VÀ THAO TÁC (8 CỘT) ---
+    // --- HÀM HIỂN THỊ DỮ LIỆU (Giữ nguyên logic chính) ---
     function loadMySubmissions() {
         const submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
         const tableBody = document.getElementById('my-submissions-list');
@@ -309,9 +311,9 @@
                 scoreText = `<span style="color: #E74C3C;">Chưa chấm</span>`; 
             }
 
-            // TẠO NÚT XEM LINK VỚI CLASS ĐẶC BIỆT
             let linkContent;
-            linkContent = `<button class="action-btn btn-view link-view-yellow" onclick="viewSubmission('${sub.link}')">Xem Link</button>`;
+            // Thay đổi màu nút xem cho đồng bộ với giao diện HS
+            linkContent = `<button class="action-btn btn-view" style="background-color: #3498db; color: white;" onclick="viewSubmission('${sub.link}')">Xem Link</button>`;
 
 
             const row = `
@@ -320,8 +322,8 @@
                     <td>${sub.title}</td>
                     <td>${displayType(sub.type)}</td>
                     <td>${sub.date}</td>
-                    <td>${linkContent}</td>      <td><span class="status-badge ${badgeClass}">${sub.status}</span></td>
-                    <td>${scoreText}</td>        <td>
+                    <td>${linkContent}</td>      <td><span class="status-badge ${badgeClass}">${sub.status}</span></td>
+                    <td>${scoreText}</td>        <td>
                         <button class="action-btn btn-delete" onclick="deleteSubmission(${sub.id})">Xóa</button> 
                     </td>
                 </tr>
@@ -330,7 +332,7 @@
         });
     }
 
-    // --- (Phần code nộp bài và tương tác form giữ nguyên) ---
+    // --- HÀM NỘP BÀI TẬP (ĐÃ THÊM displayName) ---
     function handleSubmitSubmission(event) {
         event.preventDefault();
 
@@ -345,13 +347,16 @@
             return;
         }
 
-        if (!link.startsWith('http://') && !link.startsWith('https://')) {
+        // Fix: Nếu link không có giao thức, thêm https:// (trừ khi là file:)
+        if (!link.startsWith('http://') && !link.startsWith('https://') && !link.startsWith('file:')) {
             link = 'https://' + link;
         }
-
+        
+        // CHỈNH SỬA LỚN: Thêm displayName vào object bài nộp
         const newSubmission = {
             id: Date.now(), 
             student: loggedInUsername, 
+            displayName: loggedInDisplayName, // <--- Đã THÊM: Tên hiển thị đầy đủ
             title: title,
             type: type,
             link: link,
@@ -375,6 +380,8 @@
 
     function setupSubmissionHandler() {
         const form = document.getElementById('submission-form');
+        // Đảm bảo không thêm nhiều event listener nếu form đã được thêm
+        form.removeEventListener('submit', handleSubmitSubmission);
         form.addEventListener('submit', handleSubmitSubmission);
     }
 
@@ -430,7 +437,7 @@
             } else if (selectedValue === 'link') {
                 content = `
                     <label for="lien-ket">Dán Liên kết (Website/Canva/Google Drive/YouTube):</label>
-                    <input type="text" id="lien-ket" required placeholder="Dán liên kết dự án Canva, video, hoặc trang web online...">
+                    <input type="text" id="lien-ket" required placeholder="Dán liên kết dự án video, ...">
                 `;
             } else {
                 content = `
@@ -443,7 +450,8 @@
         }
     }
     
-    document.addEventListener('DOMContentLoaded', checkAccess);
-</script>
+    // Đã xóa: document.addEventListener('DOMContentLoaded', checkAccess); 
+    // vì đã có onload="checkAccess()" trong thẻ <body>
+    </script>
 </body>
 </html>
