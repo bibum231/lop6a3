@@ -298,6 +298,40 @@
     
 <script src="db_submissions.js"></script>
     <script>
+    function handleLogin(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    // 1. Lấy danh sách tài khoản đã lưu từ Local Storage
+    const usersJSON = localStorage.getItem('allUsers'); 
+    let allUsers = {};
+
+    if (usersJSON) {
+        allUsers = JSON.parse(usersJSON);
+    } 
+    // Nếu bạn không dùng key 'allUsers', hãy thay thế bằng key bạn dùng!
+
+    // 2. Kiểm tra tài khoản
+    if (allUsers[username] && allUsers[username].password === password) {
+        // Đăng nhập thành công, lưu thông tin vào Local Storage CỦA MÁY HIỆN TẠI
+        localStorage.setItem('username', username);
+        localStorage.setItem('role', allUsers[username].role);
+        localStorage.setItem('displayName', allUsers[username].displayName);
+
+        if (allUsers[username].role === 'gv') {
+            window.location.href = 'index_gv.html';
+        } else {
+            window.location.href = 'index_hs.html';
+        }
+    } else {
+        // Tài khoản không tồn tại trong Local Storage của trình duyệt này
+        alert("Tên Người Dùng không tồn tại hoặc Mật khẩu không đúng.");
+    }
+}
+// Đảm bảo hàm handleLogin được gọi khi form submit
+document.getElementById('login-form').addEventListener('submit', handleLogin);
         // --- HÀM PHÂN LUỒNG THEO VAI TRÒ (gv/hs) ---
         function redirectToRolePage(role) {
             if (role === 'gv') {
