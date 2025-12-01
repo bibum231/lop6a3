@@ -219,10 +219,24 @@
         © 2025 Lớp 6A3 Chuyên Anh | Hệ thống Quản Lý.
     </div>
 
-    <script src="db_submissions.js"></script>
+<script src="db_submissions.js"></script>
     <script>
-        let loggedInDisplayName = ''; 
+        let loggedInDisplayName = '';
+        // Biến lưu trữ ánh xạ username -> displayName
+        let userDisplayNameMap = {}; 
 
+        // --- HÀM HỖ TRỢ: LẤY VÀ ÁNH XẠ DANH SÁCH NGƯỜI DÙNG MỚI ---
+        function initializeUserMap() {
+            const usersJSON = localStorage.getItem('allUsers');
+            const allUsersObject = usersJSON ? JSON.parse(usersJSON) : {};
+            userDisplayNameMap = {}; // Reset Map
+
+            // Chuyển đổi Object thành Map: username -> displayName
+            Object.keys(allUsersObject).forEach(username => {
+                userDisplayNameMap[username] = allUsersObject[username].displayName;
+            });
+        }
+        
         function checkTeacherAccess() {
             const role = localStorage.getItem('role');
             const displayName = localStorage.getItem('displayName'); 
@@ -236,6 +250,8 @@
             loggedInDisplayName = displayName || 'Giáo viên'; 
             document.getElementById('welcome-user').textContent = `Xin chào, ${loggedInDisplayName}!`;
             
+            // BƯỚC MỚI: Khởi tạo Map người dùng trước khi tải bài nộp
+            initializeUserMap(); 
             loadAllSubmissions();
         }
 
@@ -246,18 +262,19 @@
             window.location.href = 'trang_chu.html';
         }
 
-        /* --- HÀM CHẤM ĐIỂM (markSubmission) --- */
+        /* --- HÀM CHẤM ĐIỂM (markSubmission) (Giữ nguyên logic) --- */
         function markSubmission(id) {
             let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
             
             const submissionId = parseInt(id); 
-
             const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
 
             if (submissionIndex !== -1) {
                 const currentSubmission = submissions[submissionIndex];
                 const currentStatus = currentSubmission.status;
-                const studentName = currentSubmission.displayName || currentSubmission.student;
+                
+                // SỬA: Lấy tên hiển thị từ Map, nếu không có thì dùng username
+                const studentName = userDisplayNameMap[currentSubmission.student] || currentSubmission.student; 
                 const title = currentSubmission.title;
                 const currentScore = currentSubmission.score !== undefined && currentSubmission.score !== null ? currentSubmission.score : 'Chưa có';
                 
@@ -305,7 +322,7 @@
             }
         }
         
-        /* --- HÀM XEM BÀI (viewSubmission) --- */
+        /* --- HÀM XEM BÀI (viewSubmission) (Giữ nguyên) --- */
         function viewSubmission(link) {
             if (!link || link.trim() === '') {
                 alert("Bài nộp không có liên kết để mở.");
@@ -319,13 +336,10 @@
                 return;
             }
             
-            // Xử lý link không có http/https
             if (!(finalLink.startsWith("http://") || finalLink.startsWith("https://"))) {
-                // Thêm https://
                 finalLink = `https://${finalLink}`;
             }
 
-            // Mở tab mới
             window.open(finalLink, '_blank');
         }
 
@@ -338,7 +352,7 @@
             }
         }
 
-        /* --- HÀM LỌC VÀ HIỂN THỊ (filterSubmissions) ĐÃ SỬA CẤU TRÚC BẢNG --- */
+        /* --- HÀM LỌC VÀ HIỂN THỊ (filterSubmissions) (Đã sửa logic hiển thị Tên HS) --- */
         function filterSubmissions() {
             const statusFilter = document.getElementById('status-filter').value;
             const typeFilter = document.getElementById('type-filter').value;
@@ -349,15 +363,16 @@
             
             // Lọc dữ liệu
             const filteredSubmissions = submissions.filter(sub => {
-                const displayName = sub.displayName ? sub.displayName.toLowerCase() : '';
+                // SỬA: Lấy tên hiển thị từ Map, nếu không có thì dùng username
+                const displayName = userDisplayNameMap[sub.student] || sub.student; 
                 const title = sub.title ? sub.title.toLowerCase() : '';
-                const student = sub.student ? sub.student.toLowerCase() : '';
+                const studentUsername = sub.student ? sub.student.toLowerCase() : ''; // username
                 
                 const statusMatch = statusFilter === 'all' || sub.status === statusFilter;
                 const typeMatch = typeFilter === 'all' || sub.type === typeFilter;
-                const searchMatch = displayName.includes(searchInput) || 
+                const searchMatch = displayName.toLowerCase().includes(searchInput) || 
                                     title.includes(searchInput) ||
-                                    student.includes(searchInput);
+                                    studentUsername.includes(searchInput);
                 
                 return statusMatch && typeMatch && searchMatch;
             });
@@ -371,9 +386,7 @@
 
             document.getElementById('total-submissions-display').textContent = filteredSubmissions.length;
 
-
             if (filteredSubmissions.length === 0) {
-                 // Đảm bảo colspan là 8
                  tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Không tìm thấy bài nộp nào phù hợp với điều kiện lọc.</td></tr>'; 
                  return;
             }
@@ -398,7 +411,8 @@
                 }
                 
                 let linkToView = sub.link || ''; 
-                const studentNameDisplay = sub.displayName || sub.student;
+                // SỬA: Sử dụng Map để lấy tên hiển thị
+                const studentNameDisplay = userDisplayNameMap[sub.student] || sub.student; 
 
                 // TẠO HÀNG VỚI 8 CỘT (TD) ĐỂ KHỚP VỚI 8 CỘT (TH)
                 const row = `
@@ -422,5 +436,8 @@
         function loadAllSubmissions() {
             filterSubmissions();
         }
+
+        // Chạy khi load body
+        // checkTeacherAccess(); // Đã được gọi trong body onload
 
     </script>
