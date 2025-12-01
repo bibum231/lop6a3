@@ -317,7 +317,44 @@
                 redirectToRolePage(role); 
             }
         }
-        
+    // Hàm này được gọi khi người dùng nhấn nút Đăng nhập
+    function handleLogin(event) {
+        event.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // 1. Lấy danh sách tài khoản từ Local Storage (cũng dùng key 'allUsers')
+        const usersJSON = localStorage.getItem('allUsers'); 
+        let allUsers = {};
+
+        if (usersJSON) {
+            allUsers = JSON.parse(usersJSON);
+        } 
+        
+        // 2. Kiểm tra tài khoản
+        if (allUsers[username] && allUsers[username].password === password) {
+            // Đăng nhập thành công
+            localStorage.setItem('username', username);
+            localStorage.setItem('role', allUsers[username].role);
+            localStorage.setItem('displayName', allUsers[username].displayName);
+
+            if (allUsers[username].role === 'gv') {
+                window.location.href = 'index_gv.html';
+            } else {
+                window.location.href = 'index_hs.html';
+            }
+        } else {
+            // Lỗi: Tài khoản không tồn tại TRONG TRÌNH DUYỆT NÀY hoặc Mật khẩu sai.
+            alert("Tên Người Dùng không tồn tại hoặc Mật khẩu không đúng.");
+        }
+    }
+
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+</script>
         // Logic Đăng nhập
         document.getElementById('login-form').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -369,3 +406,4 @@
     </script>
 </body>
 </html>
+
